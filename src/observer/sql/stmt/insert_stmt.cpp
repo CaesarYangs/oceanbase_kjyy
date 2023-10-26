@@ -16,12 +16,14 @@ See the Mulan PSL v2 for more details. */
 #include "common/log/log.h"
 #include "storage/db/db.h"
 #include "storage/table/table.h"
+#include "storage/common/date.h"
 
+// TODO & QUESTION: 这种同时传递左值和右值的方法是否合理？生产中如何使用？
 InsertStmt::InsertStmt(Table *table, const Value *values, int value_amount)
     : table_(table), values_(values), value_amount_(value_amount)
 {}
 
-RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt)
+RC InsertStmt::create(Db *db, const InsertSqlNode &inserts,InsertSqlNode &inserts_m, Stmt *&stmt)
 {
   const char *table_name = inserts.relation_name.c_str();
   if (nullptr == db || nullptr == table_name || inserts.values.empty()) {
@@ -48,12 +50,31 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts, Stmt *&stmt)
   }
 
   // check fields type
+  Value *values_m = inserts_m.values.data();  //use ldate to modify
   const int sys_field_num = table_meta.sys_field_num();
   for (int i = 0; i < value_num; i++) {
     const FieldMeta *field_meta = table_meta.field(i + sys_field_num);
     const AttrType field_type = field_meta->type();
     const AttrType value_type = values[i].attr_type();
+    Value &value_m = values_m[i]; // attribute current value pointer to Value obj
     if (field_type != value_type) {  // TODO try to convert the value type to field type
+      // TODO type convert
+      if(field_type == DATES){
+          int32_t date = -1;
+          RC rc  = string_to_date(value_m.data(),date);  //convert string to date
+          if(rc != RC::SUCCESS){
+            LOG_TRACE("DATE type insert wrong");
+            printf("===DATE TEST===\n");
+            printf("date: %d\n",date);
+            return rc;
+          }
+          
+          value_m.set_dates(date); // set date storage in value, DATE type prepared well before this call
+          if(value_m.get_date() == date && rc==RC::SUCCESS){
+            value_m.set_type(DATES);
+            break;
+          }
+      }
       LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",
           table_name, field_meta->name(), field_type, value_type);
       return RC::SCHEMA_FIELD_TYPE_MISMATCH;

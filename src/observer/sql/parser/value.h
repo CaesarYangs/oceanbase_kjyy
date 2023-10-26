@@ -27,13 +27,14 @@ enum AttrType
   INTS,           ///< 整数类型(4字节)
   FLOATS,         ///< 浮点数类型(4字节)
   BOOLEANS,       ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
+  DATES,           ///日期类型(4字节 int类型存储)
 };
 
 const char *attr_type_to_string(AttrType type);
 AttrType attr_type_from_string(const char *s);
 
 /**
- * @brief 属性的值
+ * @brief 属性的值 应该是最底层存储单位
  * 
  */
 class Value 
@@ -68,6 +69,7 @@ public:
   void set_boolean(bool val);
   void set_string(const char *s, int len = 0);
   void set_value(const Value &value);
+  void set_dates(int val);
 
   std::string to_string() const;
 
@@ -93,6 +95,7 @@ public:
   float get_float() const;
   std::string get_string() const;
   bool get_boolean() const;
+  int get_date() const; //新增获取date接口
 
 private:
   AttrType attr_type_ = UNDEFINED;
@@ -102,6 +105,7 @@ private:
     int int_value_;
     float float_value_;
     bool bool_value_;
+    int date_value_;  //新增date存储
   } num_value_;
   std::string str_value_;
 };
