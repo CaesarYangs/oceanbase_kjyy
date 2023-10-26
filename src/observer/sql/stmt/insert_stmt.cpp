@@ -64,8 +64,6 @@ RC InsertStmt::create(Db *db, const InsertSqlNode &inserts,InsertSqlNode &insert
           RC rc  = string_to_date(value_m.data(),date);  //convert string to date
           if(rc != RC::SUCCESS){
             LOG_TRACE("DATE type insert wrong");
-            printf("===DATE TEST===\n");
-            printf("date: %d\n",date);
             return rc;
           }
           
